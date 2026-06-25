@@ -175,5 +175,12 @@ app.post("/api/ai/pitch", (req, res) => {
   res.json({ text });
 });
 
+app.get("/", (req, res) =>{ 
+  res.json({
+   status:"ok",
+   message: "FoundrAI API is running."
+});
+});
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`FoundrAI API running on http://localhost:${PORT}`));
