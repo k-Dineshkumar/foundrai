@@ -156,7 +156,7 @@ function Modal({ title, children, onClose }) {
 }
 
 // ─── API Client (talks to the FoundrAI Express + SQLite backend) ────────────
-const API_URL = (typeof window !== "undefined" && window.FOUNDRAI_API_URL) || "http://localhost:4000/api";
+const API_URL = "https://foundrai-backend-1.onrender.com";
 
 function authHeaders() {
   const token = typeof window !== "undefined" ? localStorage.getItem("foundrai_token") : null;
@@ -241,7 +241,7 @@ function LandingPage({ navigate, setUser }) {
     if (!regData.name || !regData.email || !regData.password) { setToast("Please fill all required fields"); return; }
     setAuthBusy(true);
     try {
-      const { token, user } = await api("/auth/register", {
+      const { token, user } = await api("/api/auth/register", {
         method: "POST",
         body: { ...regData, skills: selectedSkills, interests: selectedInterests },
       });
@@ -605,7 +605,7 @@ function MatchingPage({ user, navigate }) {
   useEffect(() => {
     api("/match", { method: "POST", body: { skills: user?.skills || [], interests: user?.interests || [] } })
       .then(setFounders)
-      .catch(() => api("/founders").then(setFounders).catch(() => {}));
+      .catch(() => api("api/founders").then(setFounders).catch(() => {}));
   }, []);
 
   async function applyFilters() {
@@ -615,7 +615,7 @@ function MatchingPage({ user, navigate }) {
       if (filters.location) qs.set("location", filters.location);
       if (filters.domain) qs.set("domain", filters.domain);
       if (filters.skills) qs.set("skills", filters.skills);
-      const data = await api(`/founders?${qs.toString()}`);
+      const data = await api(`/api/founders?${qs.toString()}`);
       setFounders(data);
     } catch {
       let f = [...MOCK_FOUNDERS];
@@ -637,7 +637,7 @@ function MatchingPage({ user, navigate }) {
     if (!connected.includes(founder.id)) {
       setConnected(p => [...p, founder.id]);
       setToast(`Connection request sent to ${founder.name}!`);
-      api(`/founders/${founder.id}/connect`, { method: "POST", auth: true }).catch(() => {});
+      api(`/api/founders/${founder.id}/connect`, { method: "POST", auth: true }).catch(() => {});
     }
   }
 
@@ -749,7 +749,7 @@ function StartupsPage({ navigate }) {
   const [allStartups, setAllStartups] = useState(MOCK_STARTUPS);
   const [selected, setSelected] = useState(null);
 
-  useEffect(() => { api("/startups").then(setAllStartups).catch(() => {}); }, []);
+  useEffect(() => { api("/api/startups").then(setAllStartups).catch(() => {}); }, []);
 
   const filtered = allStartups.filter(s => {
     const q = search.toLowerCase();
@@ -776,7 +776,7 @@ function StartupsPage({ navigate }) {
   function applyToStartup(st) {
     setApplied(p => p.includes(st.id) ? p : [...p, st.id]);
     setToast(`Applied to ${st.name}!`);
-    api(`/startups/${st.id}/apply`, { method: "POST", auth: true }).catch(() => {});
+    api(`/api/startups/${st.id}/apply`, { method: "POST", auth: true }).catch(() => {});
   }
 
   const domains = ["All", ...new Set(MOCK_STARTUPS.map(s => s.domain))];
@@ -1170,7 +1170,7 @@ function MentorsPage() {
   const [selected, setSelected] = useState(null);
   const [mentors, setMentors] = useState(MOCK_MENTORS);
 
-  useEffect(() => { api("/mentors").then(setMentors).catch(() => {}); }, []);
+  useEffect(() => { api("/api/mentors").then(setMentors).catch(() => {}); }, []);
 
   const filtered = mentors.filter(m => !filter || m.domains.some(d => d.toLowerCase().includes(filter.toLowerCase())));
 
@@ -1258,7 +1258,7 @@ function InvestorsPage() {
   const [topStartups, setTopStartups] = useState(MOCK_STARTUPS);
 
   useEffect(() => {
-    api("/investors").then(setInvestors).catch(() => {});
+    api("/api/investors").then(setInvestors).catch(() => {});
     api("/startups").then(setTopStartups).catch(() => {});
   }, []);
 
