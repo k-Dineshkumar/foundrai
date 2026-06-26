@@ -60,12 +60,18 @@ app.post("/api/auth/login", (req, res) => {
   res.json({ token, user });
 });
 
-app.get("/api/auth/me", auth, (req, res) => {
-  const row = db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id);
-  if (!row) return res.status(404).json({ error: "Not found" });
-  const user = parseRow(row, ["skills", "interests"]);
-  delete user.password;
-  res.json({ user });
+app.get("/api/users", (req, res) => {
+  try {
+    const users = db.prepare(`
+      SELECT id, name, email, skills, interests
+      FROM users
+    `).all();
+
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── FOUNDERS ─────────────────────────────────────────────────────
