@@ -463,8 +463,8 @@ function Dashboard({ user, navigate }) {
   const [startups, setStartups] = useState(MOCK_STARTUPS);
 
   useEffect(() => {
-    api("/founders").then(setFounders).catch(() => {});
-    api("/startups").then(setStartups).catch(() => {});
+    api("/api/founders").then(setFounders).catch(() => {});
+    api("/api/startups").then(setStartups).catch(() => {});
   }, []);
 
   const activities = [
