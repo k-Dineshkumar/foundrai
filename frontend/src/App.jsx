@@ -156,7 +156,7 @@ function Modal({ title, children, onClose }) {
 }
 
 // ─── API Client (talks to the FoundrAI Express + SQLite backend) ────────────
-const API_URL = "https://foundrai-backend.onrender.com";
+const API_URL = "https://foundrai-ulsq.onrender.com";
 
 function authHeaders() {
   const token = typeof window !== "undefined" ? localStorage.getItem("foundrai_token") : null;
