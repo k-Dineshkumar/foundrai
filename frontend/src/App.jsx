@@ -224,7 +224,7 @@ function LandingPage({ navigate, setUser }) {
     if (!loginEmail || !loginPass) { setToast("Please fill all fields"); return; }
     setAuthBusy(true);
     try {
-      const { token, user } = await api("/auth/login", { method: "POST", body: { email: loginEmail, password: loginPass } });
+      const { token, user } = await api("/api/auth/login", { method: "POST", body: { email: loginEmail, password: loginPass } });
       localStorage.setItem("foundrai_token", token);
       setUser(user);
       setShowLogin(false);
