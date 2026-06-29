@@ -8,6 +8,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.json({ message: "FoundrAI Backend is running." });
+});
+
 const JWT_SECRET = process.env.JWT_SECRET || "foundrai-dev-secret-change-me";
 const parseRow = (row, fields) => {
   if (!row) return row;
