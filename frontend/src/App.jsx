@@ -425,7 +425,7 @@ function LandingPage({ navigate, setUser }) {
           <Input label="Email *" type="email" value={regData.email} onChange={v => setRegData(p => ({ ...p, email: v }))} placeholder="you@example.com" icon="📧" />
           <Input label="Password *" type="password" value={regData.password} onChange={v => setRegData(p => ({ ...p, password: v }))} placeholder="Create a strong password" icon="🔒" />
           <Input label="Location" value={regData.location} onChange={v => setRegData(p => ({ ...p, location: v }))} placeholder="City, Country" icon="📍" />
-          <Input label="Account Type" value={regData.accountType} onChange={v => setRegData(p => ({ ...p, accountType: v }))} options={["Founder", "Startup", "Investor", "Mentor"]} />
+          <Select label="Account Type" value={regData.accountType} onChange={v => setRegData(p => ({ ...p, accountType: v }))} options={["Founder", "Startup", "Investor", "Mentor"].map(a=>({value: a,label: a}))} />
           <Select label="Your Role" value={regData.role} onChange={v => setRegData(p => ({ ...p, role: v }))}
             options={["Developer", "Designer", "Business Analyst", "Marketing Expert", "AI Engineer", "Investor", "Mentor"].map(r => ({ value: r, label: r }))} />
           <div style={{ marginBottom: 16 }}>
