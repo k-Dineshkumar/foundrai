@@ -201,7 +201,7 @@ function LandingPage({ navigate, setUser }) {
   const [showRegister, setShowRegister] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPass, setLoginPass] = useState("");
-  const [regData, setRegData] = useState({ name: "", email: "", password: "", role: "Developer", location: "" });
+  const [regData, setRegData] = useState({ name: "", email: "", password: "", role: "Developer", location: "" , accountType: "",role:""});
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [toast, setToast] = useState("");
@@ -425,6 +425,7 @@ function LandingPage({ navigate, setUser }) {
           <Input label="Email *" type="email" value={regData.email} onChange={v => setRegData(p => ({ ...p, email: v }))} placeholder="you@example.com" icon="📧" />
           <Input label="Password *" type="password" value={regData.password} onChange={v => setRegData(p => ({ ...p, password: v }))} placeholder="Create a strong password" icon="🔒" />
           <Input label="Location" value={regData.location} onChange={v => setRegData(p => ({ ...p, location: v }))} placeholder="City, Country" icon="📍" />
+          <Input label="Account Type" value={regData.accountType} onChange={v => setRegData(p => ({ ...p, accountType: v }))} options={["Founder", "Startup", "Investor", "Mentor"]} />
           <Select label="Your Role" value={regData.role} onChange={v => setRegData(p => ({ ...p, role: v }))}
             options={["Developer", "Designer", "Business Analyst", "Marketing Expert", "AI Engineer", "Investor", "Mentor"].map(r => ({ value: r, label: r }))} />
           <div style={{ marginBottom: 16 }}>
@@ -622,7 +623,7 @@ function MatchingPage({ user, navigate }) {
       if (filters.role) f = f.filter(x => x.role.toLowerCase().includes(filters.role.toLowerCase()));
       if (filters.location) f = f.filter(x => x.location.toLowerCase().includes(filters.location.toLowerCase()));
       if (filters.domain) f = f.filter(x => x.interests.some(i => i.toLowerCase().includes(filters.domain.toLowerCase())));
-      setFounders(f);
+      (f);
     }
   }
 
