@@ -1,8 +1,14 @@
+const User = require("./models/user");
 const express = require("express");
+require("dotenv").config();
+const mongoose = require("mongoose");
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.error(err));
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const db = require("./db");
 
 const app = express();
 app.use(cors());
@@ -33,53 +39,93 @@ function auth(req, res, next) {
 }
 
 // ── AUTH ─────────────────────────────────────────────────────────
-app.post("/api/auth/register", (req, res) => {
-  const { name, email, password, role, location, skills = [], interests = [] } = req.body;
-  if (!name || !email || !password) return res.status(400).json({ error: "name, email, password are required" });
-  const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
-  if (existing) return res.status(409).json({ error: "Email already registered" });
-
-  const avatar = name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
-  const hashed = bcrypt.hashSync(password, 10);
-  const info = db.prepare(`INSERT INTO users (name,email,password,role,location,avatar,exp,skills,interests)
-    VALUES (@name,@email,@password,@role,@location,@avatar,@exp,@skills,@interests)`).run({
-    name, email, password: hashed, role: role || "Developer", location: location || "",
-    avatar, exp: "0 years", skills: JSON.stringify(skills), interests: JSON.stringify(interests),
-  });
-  const user = parseRow(db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid), ["skills", "interests"]);
-  delete user.password;
-  const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
-  res.json({ token, user });
-});
-
-app.post("/api/auth/login", (req, res) => {
-  const { email, password } = req.body;
-  const row = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
-  if (!row || !bcrypt.compareSync(password, row.password)) {
-    return res.status(401).json({ error: "Invalid email or password" });
-  }
-  const user = parseRow(row, ["skills", "interests"]);
-  delete user.password;
-  const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
-  res.json({ token, user });
-});
-
-app.get("/api/users", (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   try {
-    const users = db.prepare(`
-      SELECT id, name, email, skills, interests
-      FROM users
-    `).all();
+    const { name, email, password, role, location, skills = [], interests = [] } = req.body;
 
+    const existing = await User.findOne({ email });
+
+    if (existing)
+      return res.status(409).json({ error: "Email already exists" });
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    const avatar = name
+      .split(" ")
+      .map(w => w[0])
+      .join("")
+      .toUpperCase();
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashed,
+      role,
+      location,
+      avatar,
+      exp: "0 years",
+      skills,
+      interests
+    });
+
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    const obj = user.toObject();
+    delete obj.password;
+
+    res.json({
+      token,
+      user: obj
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+app.post("/api/auth/login", async (req, res) => {
+
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user)
+    return res.status(401).json({ error: "Invalid email or password" });
+
+  const ok = await bcrypt.compare(password, user.password);
+
+  if (!ok)
+    return res.status(401).json({ error: "Invalid email or password" });
+
+  const token = jwt.sign(
+    { id: user._id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  const obj = user.toObject();
+  delete obj.password;
+
+  res.json({
+    token,
+    user: obj
+  });
+
+});
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
     res.json(users);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
 // ── FOUNDERS ─────────────────────────────────────────────────────
-app.get("/api/founders", (req, res) => {
+/* app.get("/api/founders", (req, res) => {
   const { role, location, skills, domain } = req.query;
   let rows = db.prepare("SELECT * FROM founders").all().map(r => parseRow(r, ["skills", "interests"]));
   if (role) rows = rows.filter(f => f.role.toLowerCase().includes(role.toLowerCase()));
@@ -149,7 +195,7 @@ app.post("/api/match", (req, res) => {
   res.json(scored);
 });
 
-app.get("/api/health", (req, res) => res.json({ ok: true, db: "sqlite", time: new Date().toISOString() }));
+app.get("/api/health", (req, res) => res.json({ ok: true, db: "mongodb", time: new Date().toISOString() }));
 
 // ── AI-STYLE TEXT ENDPOINTS (template-based, work with zero API keys) ───
 // If you want real Claude output instead, set ANTHROPIC_API_KEY and swap the
@@ -183,14 +229,7 @@ app.post("/api/ai/pitch", (req, res) => {
   if (!idea || !idea.trim()) return res.status(400).json({ error: "idea is required" });
   const text = `**Problem**\n${idea}\n\n**Solution**\nA focused product that directly addresses the problem above, built for the people who feel it most acutely.\n\n**Value Proposition**\nFaster, cheaper, or more reliable than the status quo — pick the axis that matters most to your first 10 customers and lead with it.\n\n**Elevator Pitch**\n"We help [target users] solve [core problem] by [unique mechanism], so they can [desired outcome] without [current pain point]."\n\n**Ask**\nRaising a pre-seed/seed round to build the MVP, validate with early customers, and reach the next milestone.`;
   res.json({ text });
-});
-
-app.get("/", (req, res) =>{ 
-  res.json({
-   status:"ok",
-   message: "FoundrAI API is running."
-});
-});
+});*/
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`FoundrAI API running on http://localhost:${PORT}`));
